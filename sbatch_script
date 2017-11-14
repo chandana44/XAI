@@ -1,0 +1,19 @@
+#!/bin/bash
+#SBATCH -A UTCS-Machine-Learnin #project group
+#SBATCH -J logs/xai           # job name
+#SBATCH -o logs/xai.o%j       # output and error file name (%j expands to jobID)
+#SBATCH -n 1 -N 1               # total number of mpi tasks requested
+#SBATCH -p gpu     # queue (partition) -- normal, development, etc.
+#SBATCH -t 12:00:00        # run time (hh:mm:ss) - 1.5 hours
+#SBATCH --mail-user=chandana@utexas.edu
+#SBATCH --mail-type=begin  # email me when the job starts
+#SBATCH --mail-type=end    # email me when the job finishes
+
+image='COCO_train2014_000000000009.jpg'
+question='how many questions are there?'
+
+echo '--------------------------------- SBATCH SCRIPT -------------------------------------'
+cat ./sbatch_script
+echo '-------------------------------------------------------------------------------------'
+
+./run.sh --image $image --question $question
