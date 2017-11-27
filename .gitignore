@@ -1,2 +1,4 @@
 vqaimgs
 .idea
+*.pyc
+logs

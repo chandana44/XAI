@@ -4,7 +4,7 @@ import subprocess
 import re
 from HeatValues import *
 
-# python captionSentences.py --image COCO_train2014_000000000009.jpg --question "how many questions are there?"
+# python captionSentences.py --image COCO_train2014_000000000009.jpg --question "how many cookies are there?"
 # python captionSentences.py --image COCO_train2014_000000000025.jpg --question "how many giraffes are there?"
 # python captionSentences.py --image COCO_train2014_000000000036.jpg --question "what color is the umbrella"
 if __name__ == '__main__':
@@ -16,17 +16,20 @@ if __name__ == '__main__':
     print 'image: ' + args.image
     print 'question: ' + args.question
 
-    image_path_prefix = '../vqaexp/vqaimgs/'
+    image_path_prefix = '../data/Sample_Images/'
     gradcam_path = '../grad-cam/'
-    vqaexp_path = '../vqaexp/'
+    vqaexp_path = '../XAI/'
     densecap_path = '../densecap-master/'
     heatmap_path_prefix = 'output/vqa_gcam_'
     captions_json_path = 'vis/data/results.json'
+    image = image_path_prefix + args.image
 
     # grad cam heat map
     # th visual_question_answering.lua -input_image_path <path> -question <question> -gpuid 0 -outpath <path>
     os.chdir(gradcam_path)
-    result = subprocess.check_output(['luajit', 'visual_question_answering.lua', '-input_image_path', image_path_prefix + args.image, '-question', args.question, '-gpuid', '0'])
+    result = subprocess.check_output(
+        ['luajit', 'visual_question_answering.lua', '-input_image_path', image, '-question', args.question, '-gpuid',
+         '0'])
     m = re.search("Grad-CAM answer:(.*)", result)
     answer = m.group(1).strip()
 
@@ -41,4 +44,4 @@ if __name__ == '__main__':
 
     os.chdir(vqaexp_path)
     captions_json = densecap_path + captions_json_path
-    getExplanationWords(captions_json, heatmap_image)
+    getExplanationWords(captions_json, heatmap_image, image, args.question, args.image, answer)
