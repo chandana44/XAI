@@ -2,3 +2,4 @@ vqaimgs
 .idea
 *.pyc
 logs
+results/
