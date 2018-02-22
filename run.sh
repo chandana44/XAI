@@ -5,5 +5,4 @@ pyargs="$*"
 
 module load cuda/8.0
 
-cd src/
-python -u captionSentences.py $pyargs
+python -u filterCaptions.py $pyargs

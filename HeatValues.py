@@ -7,8 +7,8 @@ from scipy.misc import imread, imresize
 def calculateHeatParams(img_path, box):
     x_start = int(box[0])
     y_start = int(box[1])
-    width = int(box[2])
-    height = int(box[3])
+    width = 1 if int(box[2]) == 0 else int(box[2])
+    height = 1 if int(box[3]) == 0 else int(box[3])
 
     maxHeat = 0
     totalHeat = 0

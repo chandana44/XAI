@@ -3,3 +3,4 @@ vqaimgs
 *.pyc
 logs
 results/
+*results
