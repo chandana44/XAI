@@ -77,12 +77,12 @@ def save_heatmap(mask):
     #cv2.imwrite("heatmap.jpg", heatmap)
     return heatmap
 
-def show_cam_on_image(img, mask, imagefile):
+def show_cam_on_image(img, mask, imagefile, OUTPUT_FOLDER):
     heatmap = cv2.applyColorMap(np.uint8(255 * mask), cv2.COLORMAP_JET)
     # normalized_heatmap = np.float32(heatmap) / 255
     # cam = normalized_heatmap + np.float32(img)
     # cam = cam / np.max(cam)
-    # cv2.imwrite(settings.OUTPUT_FOLDER + imagefile.split('/')[1].split('.')[0] + '_heatmap.jpg', np.uint8(255 * cam))
+    # cv2.imwrite(OUTPUT_FOLDER + imagefile.split('/')[1].split('.')[0] + '_heatmap.jpg', np.uint8(255 * cam))
     return heatmap
 
 
@@ -220,7 +220,7 @@ def get_args():
     return args
 
 
-def get_heatmap(image_file, model):
+def get_heatmap(image_file, model, OUTPUT_FOLDER):
 
     # pass the image through the model
     scaler = transforms.Scale((224,224))
@@ -229,7 +229,6 @@ def get_heatmap(image_file, model):
 
     image = Image.open(image_file)
     image_size = image.size
-    #img = np.array(scaler(image), dtype=np.uint8)
     img = cv2.imread(image_file, 1)
     img = np.float32(img) / 255
 
@@ -247,7 +246,7 @@ def get_heatmap(image_file, model):
     mask = grad_cam(input, target_index)
 
     #heatmap = save_heatmap(mask)
-    heatmap = show_cam_on_image(img, mask, image_file)
+    heatmap = show_cam_on_image(img, mask, image_file, OUTPUT_FOLDER)
     return heatmap
 
     # gb_model = GuidedBackpropReLUModel(model=models.vgg19(pretrained=True), use_cuda=args.use_cuda)
