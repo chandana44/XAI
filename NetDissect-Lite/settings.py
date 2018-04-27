@@ -1,6 +1,6 @@
 ######### global settings  #########
 GPU = True                                  # running on GPU is highly suggested
-MODEL = 'resnet18'                          # model arch: resnet18, alexnet, resnet50, densenet161
+MODEL = 'resnet50'                          # model arch: resnet18, alexnet, resnet50, densenet161
 DATASET = 'places365'                       # model trained on: places365 or imagenet
 OUTPUT_FOLDER = "results/" + MODEL + '/'        # result will be stored in this folder
 
@@ -31,4 +31,9 @@ if MODEL == 'resnet18':
     LAYERS_NAMES = ['layer1', 'layer2', 'layer3', 'layer4', 'avgpool']
     if DATASET == 'places365':
         TRAINED_MODEL = 'resnet18_places365.pth.tar'
+        MODEL_PARALLEL = True
+elif MODEL == 'resnet50':
+    LAYERS_NAMES = ['layer3', 'layer4']
+    if DATASET == 'places365':
+        TRAINED_MODEL = 'resnet50_places365.pth.tar'
         MODEL_PARALLEL = True

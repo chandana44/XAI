@@ -13,6 +13,7 @@ import os
 from PIL import Image, ImageFont, ImageDraw, ImageColor
 from bounding_box import BoundingBox
 from scipy.misc import imread, imresize, imsave
+from rcnn_model import get_hot_objects
 import settings
 
 import matplotlib as mpl
@@ -64,6 +65,18 @@ def get_names(layer, units):
     categories = [units_map[unit + 1]['category'] for unit in units]
     scores = [units_map[unit + 1]['score'] for unit in units]
     return names, categories, scores
+
+
+def get_units_names_from_weights(weights, class_predicted, feature_blobs, layer):
+    fc_activation = feature_blobs.copy()
+    fc_activation.resize((2048,))
+    w_x = np.multiply(weights[class_predicted], fc_activation)
+    units = w_x.argsort()[-3:][::-1]
+    # print 'top units as per weights: '
+    # print units
+    # return units
+    names, cats, scores = get_names(layer, units)
+    return units, names, cats, scores
 
 
 def get_units_names(feature_blobs, layer):
@@ -158,14 +171,16 @@ if __name__ == '__main__':
     Iou_thresholds = [0.01, 0.02, 0.04, 0.04]
     nocaption_count = 0
 
+    weights = model.fc.weight.data.cpu().numpy()
+
     for imagename in os.listdir(IMAGES_DIR):
-    #for imagename in ['Places365_val_00029567.jpg']:
+    #for imagename in ['Places365_val_00024170.jpg']:
         print 'image: ' + imagename
         imagefile = IMAGES_DIR + imagename
         if args.use_heatmap:
-            image_grounded = OUTPUT_FOLDER + imagename.split('.')[0] + '_gradcam.jpg'
+            image_grounded = OUTPUT_FOLDER + imagename.split('.')[0] + '_' + settings.MODEL + '_nd_rc_gradcam.jpg'
         else:
-            image_grounded = OUTPUT_FOLDER + imagename.split('.')[0] + '_dissect.jpg'
+            image_grounded = OUTPUT_FOLDER + imagename.split('.')[0] + '_' + settings.MODEL + '_dissect.jpg'
 
         heatmap = get_heatmap(imagefile, model, OUTPUT_FOLDER)  # width*height*3
 
@@ -175,7 +190,7 @@ if __name__ == '__main__':
         logit_array = logit.data.cpu().numpy()
         class_predicted = np.argmax(logit_array)
         answer = classes[class_predicted]
-        #print 'answer: ' + answer
+        # print 'answer: ' + answer
         for character in ['_', '-', '/']:
             if character in answer:
                 answer = answer.replace(character, ' ')
@@ -198,9 +213,8 @@ if __name__ == '__main__':
                 for character in ['_', '-', '/']:
                     if character in word:
                         word = word.replace(character, ' ')
-                word_firstword = word.split(' ')[0]
                 if category == TEXTURE or answer == word:
-                        #or float(scores[index]) < Iou_thresholds[layer]:
+                    # or float(scores[index]) < Iou_thresholds[layer]:
                     continue
 
                 unit = units[index]
@@ -231,16 +245,15 @@ if __name__ == '__main__':
             boxes = []
             for index in range(len(names)):
                 word = names[index]
-                #print word
+                # print word
                 if word.endswith('-s') or word.endswith('-c'):
                     word = word[:-2]
                 category = categories[index]
                 for character in ['_', '-', '/']:
                     if character in word:
                         word = word.replace(character, ' ')
-                word_firstword = word.split(' ')[0]
                 if category == TEXTURE or answer == word:
-                        # or float(scores[index]) < Iou_thresholds[layer]:
+                    # or float(scores[index]) < Iou_thresholds[layer]:
                     continue
 
                 unit = units[index]
@@ -249,34 +262,24 @@ if __name__ == '__main__':
                     continue
 
                 maxheat, avgheat = check_heat_indexes(heatmap, indexes)
-                #print 'appending word ' + word
-                #print str(len(indexes))
-                boxes.append(BoundingBox(x1, y1, x2, y2, len(indexes), word, maxheat, avgheat, 'black', layer, unit, scores[index]))
+                boxes.append(BoundingBox(x1, y1, x2, y2, len(indexes), word, maxheat, avgheat, 'black', layer, unit,
+                                         scores[index]))
 
             boxes.sort(
-                key=lambda x: x.maxheat + x.avgheat + (int(x.num_indexes *200/ (image_shape[0] * image_shape[1]))) + int(float(x.unit_IoU_score) * 1000),
+                key=lambda x: x.maxheat + x.avgheat + (
+                int(x.num_indexes * 200 / (image_shape[0] * image_shape[1]))) + int(float(x.unit_IoU_score) * 1000),
                 reverse=True)
 
             # for box in boxes:
             #     print box.word
 
             for box in boxes:
-                # print 'processing box ' + box.word
-                # print 'max heat ' + str(box.maxheat)
-                # print 'avg heat ' + str(box.avgheat)
-                # print 'box size ' + str((int(box.num_indexes * 200/ (image_shape[0] * image_shape[1])) ))
-                # print 'IoU score ' + str(int(float(box.unit_IoU_score) * 1000))
-                #print box.maxheat + box.avgheat + (int(box.num_indexes / (image_shape[0] * image_shape[1])) * 200) + int(float(box.unit_IoU_score) * 1000)
                 if box.maxheat < 230:  # or (int((box.num_indexes / (image_shape[0] * image_shape[1])) * 200) < 5):
                     continue
                 if box.avgheat < 170:
                     continue
-                if (int(box.num_indexes * 200/ (image_shape[0] * image_shape[1])) == 0):
+                if (int(box.num_indexes * 200 / (image_shape[0] * image_shape[1])) == 0):
                     continue
-                # if (box.maxheat + box.avgheat + (int((box.num_indexes / (image_shape[0] * image_shape[1])) * 200))) < 500:
-                #     break
-                #print box.unit
-                #print box.word
                 keyword = box.word
                 # print box.word + ' adding in map'
                 if not keyword in map:
@@ -293,9 +296,13 @@ if __name__ == '__main__':
         units = []
         words = []
         categories = []
-        for layer_num in range(2, 4):
+        for layer_num in range(1, 2):
             layer_units, layer_words, layer_cats, layer_scores = get_units_names(features_blobs[layer_num],
                                                                                  settings.LAYERS_NAMES[layer_num])
+            #layer_units, layer_words, layer_cats, layer_scores = get_units_names_from_weights(weights, class_predicted,
+                                                                                              # features_blobs[layer_num],
+                                                                                              # settings.LAYERS_NAMES[
+                                                                                              #     layer_num])
             # print 'layer: ' + str(layer_num)
             # print layer_units
             # print layer_words
@@ -306,6 +313,8 @@ if __name__ == '__main__':
             else:
                 color_id = layer_boxes(layer_num, layer_units, layer_words, layer_cats, layer_scores, word_rect_map,
                                        color_id)
+
+        word_rect_map = get_hot_objects(imagefile, heatmap, word_rect_map, color_id)
 
         image_array = np.array(image, dtype=np.uint8)
         # Create figure and axes
