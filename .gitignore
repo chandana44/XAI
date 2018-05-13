@@ -4,3 +4,5 @@ vqaimgs
 logs
 results/
 *results
+NetDissect-Lite/models/
+NetDissect-Lite/sample_val_images_1000/

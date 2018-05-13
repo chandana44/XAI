@@ -356,20 +356,28 @@ def get_hot_objects(image_file, heatmap, word_rect_map, color_id):
                                          score))
                 # print(class_name, bbox, score)
 
-                bounding_boxes.sort(
-                    key=lambda x: x.maxheat + x.avgheat, reverse=True)
+    bounding_boxes.sort(
+        key=lambda x: x.maxheat + x.avgheat + (x.det_score*100), reverse=True)
+    # for box in bounding_boxes:
+    #     print(box.det_score)
 
-                for box in bounding_boxes:
-                    if box.maxheat < 230:
-                        continue
-                    if box.avgheat < 170:
-                        continue
-                    keyword = box.word
-                    if not keyword in word_rect_map:
-                        word_rect_map[keyword] = []
-                        color_id += 1
-                        box.color = colors[color_id]
-                    else:
-                        box.color = word_rect_map[keyword][0].color
-                    word_rect_map[keyword].append(box)
+    for box in bounding_boxes:
+        if box.maxheat < 230:
+            continue
+        if box.avgheat < 170:
+            continue
+        if box.det_score < 0.8:
+            continue
+        keyword = box.word
+        if not keyword in word_rect_map:
+            word_rect_map[keyword] = []
+            color_id += 1
+            box.color = colors[color_id]
+        else:
+            box.color = word_rect_map[keyword][0].color
+        word_rect_map[keyword].append(box)
+
+    # for word in word_rect_map.keys():
+    #     print(word, [x.det_score for x in word_rect_map[word]])
+
     return word_rect_map
